@@ -64,6 +64,7 @@ MIDDLEWARE = [
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
     'allauth.account.middleware.AccountMiddleware',
+    # 'middlewares.RequestLoggerMiddleware',
 ]
 
 ROOT_URLCONF = 'urls'
@@ -190,3 +191,5 @@ REST_AUTH = {
     'JWT_AUTH_COOKIE': 'my-app-auth',
     'JWT_AUTH_REFRESH_COOKIE': 'my-refresh-token',
 }
+
+LOGGING_API = 'http://127.0.0.1:5555/api/loggers/create_trusted_log/'
