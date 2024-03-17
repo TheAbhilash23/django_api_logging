@@ -1,0 +1,16 @@
+version: '3.4'
+services:
+  postgres:
+    image: postgres:latest
+    container_name: request_logging_db
+    ports:
+      - "5432:5432"
+    environment:
+      POSTGRES_DB: db
+      POSTGRES_USER: admin
+      POSTGRES_PASSWORD: root
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+
+volumes:
+  postgres_data:
