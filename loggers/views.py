@@ -11,6 +11,8 @@ import threading
 
 api_lock = threading.Lock()
 
+bus = []
+
 
 class RequestLogView(ModelViewSet):
     queryset = models.RequestLog.objects.all()
@@ -22,7 +24,6 @@ class RequestLogView(ModelViewSet):
             )
     def create_trusted_log(self, request, *args, **kwargs):
         with api_lock:
-            bus = []
             passenger = models.RequestLog(
                 response_code=request.data.get('response_code'),
                 method=request.data.get('method'),
@@ -31,12 +32,14 @@ class RequestLogView(ModelViewSet):
                 response_received_at=request.data.get('response_received_at'),
             )
 
-            if len(bus) <= 500:
+            if len(bus) < 500:
                 bus.append(passenger)
                 response = {'message': 'Response Recorded in bus'}
                 return Response(response, status=status.HTTP_201_CREATED,)
             else:
                 models.RequestLog.objects.bulk_create(bus)
+                print('len bus 500', len(bus))
+                bus.clear()
                 response = {'message': 'Bus Transported to database'}
                 return Response(response, status=status.HTTP_201_CREATED,)
 
