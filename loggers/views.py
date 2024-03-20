@@ -1,3 +1,5 @@
+import time
+
 from rest_framework import serializers
 from rest_framework.decorators import action
 from rest_framework.viewsets import ModelViewSet
@@ -18,13 +20,17 @@ class RequestLogView(ModelViewSet):
     queryset = models.RequestLog.objects.all()
     serializer_class = serializers.RequestLogSerializer
 
+    def list(self, request, *args, **kwargs):
+        print('Requesting list of RequestLogs')
+        return super().list(request, *args, **kwargs)
+
     @action(methods=['POST'],
             detail=False, url_path='create_trusted_log',
             permission_classes=(),
             )
     def create_trusted_log(self, request, *args, **kwargs):
         with api_lock:
-            request = models.RequestLog(
+            current_request = models.RequestLog(
                 response_code=request.data.get('response_code'),
                 method=request.data.get('method'),
                 url=request.data.get('url'),
@@ -33,9 +39,10 @@ class RequestLogView(ModelViewSet):
             )
 
             if len(__batch__) < 500:
-                __batch__.append(request)
+                __batch__.append(current_request)
+                print('len __batch__', len(__batch__))
                 response = {'message': 'Response Recorded in __batch__'}
-                return Response(response, status=status.HTTP_201_CREATED,)
+                return Response(response, status=status.HTTP_202_ACCEPTED,)
             else:
                 models.RequestLog.objects.bulk_create(__batch__)
                 print('len __batch__ 500', len(__batch__))

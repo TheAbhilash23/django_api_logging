@@ -2,44 +2,60 @@ import asyncio
 import threading
 
 import aiohttp
-from django.conf import settings
+from django.utils import timezone
 
 
 class RequestLoggerMiddleware:
-
+    """
+    Use this middleware in your client's django application to log requests onto this server
+    """
     def __init__(self, get_response):
         self.get_response = get_response
+        self.loop = None
+        self.thread = None
 
-    address = settings.LOGGING_API
-
-    async def __call__(self, request):
-        print(request.path)
-        print(request.get_full_path())
-
+    async def async_log(self, params: dict):
         async def send_request():
-            # url = self.address
-            url = 'http://127.0.0.1:5555/api/loggers/create_trusted_log/'
             data = {
-                'response_code': 123,
-                'method': "post",
-                'url': "github.com2",
-                'request_received_at': "2024-03-17T12:04:01+05:30",
-                'response_received_at': "2024-03-17T12:04:03+05:30",
+                'response_code': params.get('response_code'),
+                'method': params.get('method'),
+                'url': params.get('url'),
+                'request_received_at': params.get('request_received_at'),
+                'response_received_at': params.get('response_received_at'),
             }
             headers = {'Content-Type': 'application/json'}
 
             async with aiohttp.ClientSession() as session:
-                async with session.post(url, json=data, headers=headers) as response:
+                async with session.post(data['url'], json=data, headers=headers) as response:
                     pass
 
-            new_loop.stop()
-            thread.join()
+        if not params['url'].startswith('/api/loggers/create_trusted_log/'):
+            if self.loop is None:
+                self.loop = asyncio.new_event_loop()
+                self.thread = threading.Thread(target=self.run_loop)
+                self.thread.start()
+            asyncio.run_coroutine_threadsafe(send_request(), self.loop)
 
-        new_loop = asyncio.new_event_loop()
-        thread = threading.Thread(target=new_loop.run_forever)
-        thread.start()
+    def run_loop(self):
+        asyncio.set_event_loop(self.loop)
+        self.loop.run_forever()
 
-        asyncio.run_coroutine_threadsafe(send_request(), new_loop)
+    def __call__(self, request):
+        request_time = timezone.now()
+        response = self.get_response(request)
+        response_time = timezone.now()
+        details = {
+            'response_code': response.status_code,
+            'method': request.method.lower(),
+            'url': request.url,
+            'request_received_at': request_time.strftime('%Y-%m-%d %H:%M:%S'),
+            'response_received_at': response_time.strftime('%Y-%m-%d %H:%M:%S'),
+        }
 
-        response = await self.get_response(request)
+        try:
+            asyncio.get_event_loop().run_until_complete(self.async_log(details))
+        except RuntimeError:
+            loop = asyncio.new_event_loop()
+            asyncio.set_event_loop(loop)
+            loop.run_until_complete(self.async_log(details))
         return response
