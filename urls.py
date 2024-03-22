@@ -18,8 +18,8 @@ from django.urls import path, include
 from routers import router
 
 urlpatterns = [
-    path('admin/', admin.site.urls),
-    path('api/', include(router.get_urls()), name='api'),
-    path('auth/', include('dj_rest_auth.urls')),
-    path('auth/registration/', include('dj_rest_auth.registration.urls')),
+    path('backend/admin/', admin.site.urls),
+    path('backend/api/', include(router.get_urls()), name='api'),
+    path('backend/auth/', include('dj_rest_auth.urls')),
+    path('backend/auth/registration/', include('dj_rest_auth.registration.urls')),
 ]

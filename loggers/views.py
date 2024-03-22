@@ -44,7 +44,7 @@ class RequestLogView(ModelViewSet):
                 response = {'message': 'Response Recorded in __batch__'}
                 return Response(response, status=status.HTTP_202_ACCEPTED,)
             else:
-                models.RequestLog.objects.bulk_create(__batch__)
+                models.RequestLog.objects.bulk_create(__batch__, batch_size=500)
                 print('len __batch__ 500', len(__batch__))
                 __batch__.clear()
                 response = {'message': 'Bus Transported to database'}

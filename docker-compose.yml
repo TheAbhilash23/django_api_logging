@@ -1,8 +1,35 @@
 version: '3.4'
 services:
-  postgres:
+  application:
+    image: 'logging_app:latest'
+    build:
+      context: .
+    tty: true
+    volumes:
+      - .:/code
+    container_name: 'logging_app'
+    depends_on:
+      - db
+    restart: always
+    working_dir: /code
+    hostname: 'logging_server'
+    ports:
+      - "5555:5555"
+
+  nginx:
+    image: nginx:latest
+    container_name: 'logging_app_nginx'
+    depends_on:
+      - application
+    ports:
+      - "80:80"
+    volumes:
+      - ./config/nginx.conf:/etc/nginx/nginx.conf
+    restart: unless-stopped
+
+  db:
     image: postgres:latest
-    container_name: request_logging_db
+    container_name: logging_app_db
     ports:
       - "5432:5432"
     environment:
