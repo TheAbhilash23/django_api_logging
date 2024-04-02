@@ -1,4 +1,6 @@
 import asyncio
+import timeit
+
 import aiohttp
 
 
@@ -29,8 +31,10 @@ async def main():
         for _ in range(num_requests):
             tasks.append(send_post_request(session, url, headers, data))
 
+        print('Async Requests dispatched successfully ')
         await asyncio.gather(*tasks)
 
 
 if __name__ == "__main__":
-    asyncio.run(main())
+    execution_time = timeit.timeit(lambda: asyncio.run(main()), number=1)
+    print("Execution time", execution_time)
